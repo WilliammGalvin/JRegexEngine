@@ -42,7 +42,7 @@ public class Parser {
         return peek() == null || expect(TokenType.PIPE) || expect(TokenType.RIGHT_PAREN);
     }
 
-    private Alternation parseAlternation() {
+    private ASTNode parseAlternation() {
         ASTNode left = parseConcatenation();
         if (left == null) return null;
         ArrayList<ASTNode> children = new ArrayList<>(List.of(left));
@@ -57,6 +57,9 @@ public class Parser {
 
             children.add(right);
         }
+
+        if (children.size() == 1)
+            return children.get(0);
 
         return new Alternation(children);
     }
@@ -111,7 +114,10 @@ public class Parser {
             if (token == null)
                 throw new RuntimeException("Unexpected end of input after CHAR");
 
-            return new Literal(token.getValue());
+            if (token.getValue().length() != 1)
+                throw new RuntimeException("Expected a single character but found: " + token.getValue());
+
+            return new Literal(token.getValue().charAt(0));
         }
 
         if (!expect(TokenType.LEFT_PAREN))
@@ -136,7 +142,7 @@ public class Parser {
     }
 
     public ASTNode buildAST() {
-        Alternation expr = parseAlternation();
+        ASTNode expr = parseAlternation();
 
         if (position != tokens.size())
             throw new RuntimeException("Unexpected token at end of input: " + peek());
